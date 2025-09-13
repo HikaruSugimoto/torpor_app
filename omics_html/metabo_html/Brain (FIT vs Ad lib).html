@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Differentially regulated metabolites</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .plot-container {
+            width: 100%;
+            height: 600px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        #gene-search {
+            padding: 8px;
+            width: 250px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .selector-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+        #gene-selector {
+            padding: 8px;
+            width: 280px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #search-results {
+            margin-top: 10px;
+            font-size: 14px;
+            width: 100%;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+        label {
+            margin-left: 5px;
+        }
+        h3 {
+            margin: 15px 0 10px 0;
+        }
+        .control-panel {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        .info-box {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f5f5f5;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Differentially regulated metabolites</h1>
+
+    <div class="control-panel">
+        <div class="search-container">
+            <input type="text" id="gene-search" placeholder="Search for metabolites name...">
+            <button onclick="searchGene()">Search</button>
+            <button onclick="resetView()">Reset</button>
+        </div>
+
+        <div class="selector-container">
+            <label for="gene-selector">Select metabolites: </label>
+            <select id="gene-selector" onchange="selectGene(this.value)">
+                <option value="">-- Select a metabolites --</option>
+                <!-- Gene options will be populated by JavaScript -->
+            </select>
+        </div>
+
+        <div id="search-results"></div>
+
+        <div class="filter-container">
+            <h3>Select categories to display:</h3>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="filter-all" checked onchange="updateFilters()">
+                    <label for="filter-all">All metabolites</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="filter-up" checked onchange="updateFilters()">
+                    <label for="filter-up">Upregulated metabolites</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="filter-down" checked onchange="updateFilters()">
+                    <label for="filter-down">Downregulated metabolites</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>Tip:</strong> Click on any data point to display its metabolites name. Click anywhere else on the plot to clear annotations. Search results will automatically be highlighted with arrows.</p>
+        </div>
+    </div>
+
+    <div id="plotly-div" class="plot-container"></div>
+
+    <script>
+        // Prepare data
+        var allData = [{"x": 0.027901526397248917, "y": 0.05675086102720985, "text": "G1P", "category": "All"}, {"x": 0.08642999622571433, "y": 0.20743514558781104, "text": "G6P", "category": "All"}, {"x": 0.06039141676465526, "y": 0.10011771291201906, "text": "F6P", "category": "All"}, {"x": 0.044457548980638514, "y": 0.11979232871817413, "text": "F1,6P", "category": "All"}, {"x": 0.038602809631833886, "y": 0.24387840868525576, "text": "Glycerophosphate", "category": "All"}, {"x": -0.034614664546386224, "y": 0.08850225769305822, "text": "2,3-DPG", "category": "All"}, {"x": 0.010188464622302152, "y": 0.029947149040201057, "text": "3PG", "category": "All"}, {"x": 0.01014653492750934, "y": 0.041873367976445, "text": "Pyruvate", "category": "All"}, {"x": -0.0012404415015339946, "y": 0.0064548885505979255, "text": "Lactate", "category": "All"}, {"x": 0.011722506263013775, "y": 0.05154338590689248, "text": "Acetyl CoA", "category": "All"}, {"x": -0.04113114383682634, "y": 0.24816729946037186, "text": "Citrate", "category": "All"}, {"x": 0.11624731866518948, "y": 0.45834228188774284, "text": "cis-Aconitate", "category": "All"}, {"x": -0.1150355071785353, "y": 1.0116108792252845, "text": "Isocitrate", "category": "All"}, {"x": 0.10786955041900874, "y": 0.7095393454412141, "text": "2-Hydroxyglutarate", "category": "All"}, {"x": 0.014530248423237265, "y": 0.06405233858371444, "text": "Succinate", "category": "All"}, {"x": 0.07096760491004486, "y": 0.5620348868947388, "text": "Fumarate", "category": "All"}, {"x": 0.03704644442380043, "y": 0.2646520720710017, "text": "Malate", "category": "All"}, {"x": -0.1928009617311411, "y": 0.8874088150135108, "text": "6-Phosphogluconate", "category": "All"}, {"x": -0.04146149289129372, "y": 0.1462131294255749, "text": "Ru5P", "category": "All"}, {"x": -0.0744406264946484, "y": 0.26879232495985295, "text": "S7P", "category": "All"}, {"x": 0.11363369363746681, "y": 0.3760287319231039, "text": "Glyoxylate", "category": "All"}, {"x": 0.11670987221307726, "y": 0.3969729818052651, "text": "Glycolate", "category": "All"}, {"x": -0.039672641906654135, "y": 0.13347412150393786, "text": "Methanesulfonate", "category": "All"}, {"x": 0.17504544649749773, "y": 0.41068201825763784, "text": "Malonate", "category": "All"}, {"x": 1.8396212684787991, "y": 2.9948190583516867, "text": "2-Hydroxybutyrate", "category": "All"}, {"x": 2.047503204233857, "y": 3.449838937218244, "text": "3-Hydroxybutyrate", "category": "All"}, {"x": 0.19381672576911432, "y": 0.5740255899073512, "text": "Hexanoate", "category": "All"}, {"x": 0.00900519365559864, "y": 0.04364206439462594, "text": "Isethionate", "category": "All"}, {"x": -0.13170043297753337, "y": 0.47133836586025857, "text": "5-Oxoproline", "category": "All"}, {"x": 0.25264003201477303, "y": 0.8406971812757803, "text": "Glutarate", "category": "All"}, {"x": 0.0500309980487437, "y": 0.1090690640231143, "text": "Threonate", "category": "All"}, {"x": 0.017752445141123875, "y": 0.12030989487859538, "text": "Ethanolamine phosphate", "category": "All"}, {"x": 0.017475848933008523, "y": 0.08475159742948811, "text": "Tartrate", "category": "All"}, {"x": 0.11476314861682561, "y": 1.149330905235116, "text": "3-Hydroxy-3-methylglutarate", "category": "All"}, {"x": 0.0077002673531118195, "y": 0.04944805807483596, "text": "N-Acetylaspartate", "category": "All"}, {"x": 0.043595113048029425, "y": 0.30129639454623036, "text": "N-Acetylglutamate", "category": "All"}, {"x": -0.00971278242064708, "y": 0.02917013938848143, "text": "Dodecanoate", "category": "All"}, {"x": -0.06869350409754005, "y": 0.1501993435196915, "text": "Mucate", "category": "All"}, {"x": -0.19596430709526128, "y": 1.943150619992443, "text": "Pantothenate", "category": "All"}, {"x": 0.1475798236205449, "y": 0.4843128847935036, "text": "2-Deoxyglucose 6-phosphate", "category": "All"}, {"x": -0.23341799791437456, "y": 1.4453922096126604, "text": "N-Acetylglucosamine 1-phosphate", "category": "All"}, {"x": -0.04702040450657381, "y": 0.3710879652296897, "text": "N-Acetylneuraminate", "category": "All"}, {"x": -0.1210259487417386, "y": 0.7528645198997351, "text": "CMP", "category": "All"}, {"x": 0.014528721636307805, "y": 0.06886992308601358, "text": "UMP", "category": "All"}, {"x": 0.004611915160541233, "y": 0.030969913876724597, "text": "AMP", "category": "All"}, {"x": 0.10002025632496873, "y": 0.2805612922905139, "text": "IMP", "category": "All"}, {"x": -0.014815793554946359, "y": 0.09257008804484679, "text": "GMP", "category": "All"}, {"x": -0.02593795996220556, "y": 0.1005950711157498, "text": "NADPH", "category": "All"}, {"x": 0.04412814371690506, "y": 0.13623981618398318, "text": "UDP", "category": "All"}, {"x": -0.012666260849354072, "y": 0.05396395163629974, "text": "ADP", "category": "All"}, {"x": -0.026124813486000927, "y": 0.09057696117853865, "text": "GDP", "category": "All"}, {"x": 0.04968815796755908, "y": 0.28868457538039877, "text": "Adenylosuccinate", "category": "All"}, {"x": 0.02266565965430966, "y": 0.05055392126187215, "text": "ATP", "category": "All"}, {"x": -0.17873509835114273, "y": 0.35836256995705845, "text": "GTP", "category": "All"}, {"x": 0.07990516066850001, "y": 0.6313604568266298, "text": "UDP-glucose", "category": "All"}, {"x": 0.04264385977830887, "y": 0.27901881761358877, "text": "UDP-N-acetylglucosamine", "category": "All"}, {"x": -0.05227016631285811, "y": 0.46967064901866423, "text": "NAD+", "category": "All"}, {"x": -0.052671898682480935, "y": 0.13458553228126202, "text": "NADH", "category": "All"}, {"x": -0.009416135953165794, "y": 0.036969946489930725, "text": "Urea", "category": "All"}, {"x": 0.025814584817376845, "y": 0.14687679261734007, "text": "Gly", "category": "All"}, {"x": -1.3232685158169575, "y": 3.9989199508439195, "text": "Trimethylamine N-oxide", "category": "All"}, {"x": 0.2129306515149865, "y": 1.4197378003858065, "text": "Putrescine(1,4-Butanediamine)", "category": "All"}, {"x": -0.05195423191611485, "y": 0.31650240059142437, "text": "beta-Ala", "category": "All"}, {"x": -0.05661562164763617, "y": 0.4501785206172617, "text": "Ala", "category": "All"}, {"x": -0.10444550765140344, "y": 0.41624910692902706, "text": "Spermine", "category": "All"}, {"x": -0.09418163051223848, "y": 0.9835980114657178, "text": "GABA", "category": "All"}, {"x": 1.3287609906967555, "y": 2.554092830255901, "text": "2AB", "category": "All"}, {"x": -0.12928127692054375, "y": 0.7700462367977045, "text": "Choline", "category": "All"}, {"x": 0.116651011424604, "y": 1.1418229108331117, "text": "Ser", "category": "All"}, {"x": -0.1260693234172359, "y": 0.37087878252259354, "text": "Diethanolamine", "category": "All"}, {"x": 0.04463446037586251, "y": 0.11261087333294592, "text": "beta-Ala-Lys", "category": "All"}, {"x": -0.2180865422384529, "y": 0.5967605396223219, "text": "Hypotaurine", "category": "All"}, {"x": 0.012581403487595129, "y": 0.027437972721089967, "text": "Histamine", "category": "All"}, {"x": -0.08518807207706705, "y": 0.3218227079013154, "text": "Carnosine", "category": "All"}, {"x": -0.12595940988500864, "y": 1.355298215273578, "text": "Creatinine", "category": "All"}, {"x": -0.03272851094777377, "y": 0.2439336878118722, "text": "Pro", "category": "All"}, {"x": -0.10611223447290487, "y": 0.7775532340379795, "text": "Guanidinoacetate", "category": "All"}, {"x": 0.19663461239921762, "y": 2.580322255912792, "text": "Val", "category": "All"}, {"x": 0.47500594565025994, "y": 1.0977515894304462, "text": "Betaine", "category": "All"}, {"x": -0.1694779885256625, "y": 1.0077726347315727, "text": "Homoserine", "category": "All"}, {"x": -0.07816237852213907, "y": 0.3996620114658171, "text": "Thr", "category": "All"}, {"x": -0.0905555429355168, "y": 0.474411458429598, "text": "Anserine", "category": "All"}, {"x": 0.02161043392417062, "y": 0.10055943783414002, "text": "Homocarnosine", "category": "All"}, {"x": 0.014947998884278673, "y": 0.04523818952475327, "text": "Nicotinamide", "category": "All"}, {"x": -0.006974988073981185, "y": 0.034714975126129616, "text": "Taurine", "category": "All"}, {"x": -0.05891745614732935, "y": 0.1764455798235164, "text": "1-Methylhistamine", "category": "All"}, {"x": 0.08367947665401138, "y": 0.21703935478773556, "text": "Pipecolate", "category": "All"}, {"x": -0.15026684366109141, "y": 0.46841365817671327, "text": "Hydroxyproline", "category": "All"}, {"x": -0.02485532175153813, "y": 0.2002037714774007, "text": "Creatine", "category": "All"}, {"x": 0.19427484120757485, "y": 1.706230945881575, "text": "Ile", "category": "All"}, {"x": -0.024366031097320634, "y": 0.16403765282451785, "text": "Leu", "category": "All"}, {"x": -0.17486415078423867, "y": 2.395399340473675, "text": "Asn", "category": "All"}, {"x": -0.47695272674398603, "y": 4.178486471595227, "text": "Ornithine", "category": "All"}, {"x": -0.06389804471014249, "y": 0.7368815471969278, "text": "Asp", "category": "All"}, {"x": 0.09538011183889424, "y": 0.36747556439748885, "text": "Adenine", "category": "All"}, {"x": 0.01893189972208926, "y": 0.05459616207041937, "text": "Hypoxanthine", "category": "All"}, {"x": -0.007492345064765505, "y": 0.023626389966310016, "text": "1-Methylnicotinamide", "category": "All"}, {"x": -0.6471709416622896, "y": 1.91246812482554, "text": "Proline betaine", "category": "All"}, {"x": -0.09256077831477146, "y": 0.5075987603808267, "text": "gamma-Guanidinobutyrate", "category": "All"}, {"x": -0.11750129700377146, "y": 0.8875917154117023, "text": "Acetylcholine", "category": "All"}, {"x": -0.1045407725368435, "y": 1.1049634070947656, "text": "gamma-Butyrobetaine", "category": "All"}, {"x": -0.10109647431267557, "y": 0.41075528776121134, "text": "Spermidine", "category": "All"}, {"x": -0.21107276696123414, "y": 0.8829020124721264, "text": "Gln", "category": "All"}, {"x": -0.1288208237709045, "y": 1.4524616126334025, "text": "Lys", "category": "All"}, {"x": -0.07251062948762765, "y": 0.8339943936436686, "text": "Glu", "category": "All"}, {"x": -1.0310244313741475, "y": 7.230622673923862, "text": "Met", "category": "All"}, {"x": 0.02020850994808438, "y": 0.07774107949404332, "text": "His", "category": "All"}, {"x": 0.04628106869881201, "y": 0.17833479830047402, "text": "alpha-Aminoadipate", "category": "All"}, {"x": 0.06313474854385827, "y": 0.21694393924196984, "text": "N-Methylglutamate", "category": "All"}, {"x": -0.0833366496568895, "y": 0.6826336193508069, "text": "Carnitine", "category": "All"}, {"x": 0.03944945877557919, "y": 0.09963970866745878, "text": "Phe", "category": "All"}, {"x": 1.1521160356711735, "y": 5.423658649794207, "text": "3-Methylhistidine", "category": "All"}, {"x": -0.27009910361325257, "y": 1.777376509030908, "text": "Arg", "category": "All"}, {"x": -0.3232933245701986, "y": 3.4597806772589896, "text": "Citrulline", "category": "All"}, {"x": -0.14385568595150008, "y": 0.45749072629786497, "text": "Serotonin", "category": "All"}, {"x": -0.6999292269723832, "y": 3.3561270509100303, "text": "Tyr", "category": "All"}, {"x": -0.17881663176114287, "y": 2.3360925276823563, "text": "Phosphorylcholine", "category": "All"}, {"x": -0.3347395317969699, "y": 0.7011438246155997, "text": "N1-Acetylspermidine", "category": "All"}, {"x": -0.1205766736215742, "y": 0.5292704976937008, "text": "Gly-Leu", "category": "All"}, {"x": -0.038186575922792225, "y": 0.222703951113234, "text": "N6,N6,N6-Trimethyllysine", "category": "All"}, {"x": -0.12188071379373018, "y": 0.6450932719222662, "text": "SAH", "category": "All"}, {"x": -0.1682520916791661, "y": 1.344974506046395, "text": "SAM+", "category": "All"}, {"x": -0.07870077744061954, "y": 0.6954212801947143, "text": "o-Acetylcarnitine", "category": "All"}, {"x": 0.2611666240248345, "y": 1.0967209677702978, "text": "Trp", "category": "All"}, {"x": -0.3334928364330305, "y": 0.9699855328970125, "text": "Cysteine-glutathione disulphide", "category": "All"}, {"x": -0.3261588170179935, "y": 3.5901564485802937, "text": "Cystathionine", "category": "All"}, {"x": 0.059235419570315515, "y": 0.236471138282569, "text": "Cytidine", "category": "All"}, {"x": -0.11580488646361183, "y": 0.7259586635486834, "text": "Uridine", "category": "All"}, {"x": -0.05289057395991459, "y": 0.4306368776446664, "text": "Pyridoxamine 5'-phosphate", "category": "All"}, {"x": -0.28499467531734685, "y": 0.7759597565683737, "text": "Glycerophosphorylcholine", "category": "All"}, {"x": -0.24134619036869306, "y": 1.0230386145712793, "text": "Thiamine", "category": "All"}, {"x": 0.03957386622662817, "y": 0.16138574478643442, "text": "Adenosine", "category": "All"}, {"x": 0.019887808397658135, "y": 0.053004163712775575, "text": "Inosine", "category": "All"}, {"x": -0.06659156488557949, "y": 0.29249761745236735, "text": "Saccharopine", "category": "All"}, {"x": -0.05299812127889871, "y": 0.20435520603693463, "text": "1-Methyladenosine", "category": "All"}, {"x": 0.07236124982115896, "y": 0.2979559731807798, "text": "Guanosine", "category": "All"}, {"x": -0.28307047289375115, "y": 1.4481326577531142, "text": "Argininosuccinate", "category": "All"}, {"x": 0.07434107896423484, "y": 0.2575706430422341, "text": "5-Methylthioadenosine", "category": "All"}, {"x": -0.010433015403979597, "y": 0.08293475782204315, "text": "Glutathione(ox)", "category": "All"}, {"x": -0.11147988415139119, "y": 0.24518402425170524, "text": "Thiamine monophosphate", "category": "All"}, {"x": 1.8396212684787991, "y": 2.9948190583516867, "text": "2-Hydroxybutyrate", "category": "Upregulated"}, {"x": 2.047503204233857, "y": 3.449838937218244, "text": "3-Hydroxybutyrate", "category": "Upregulated"}, {"x": 1.3287609906967555, "y": 2.554092830255901, "text": "2AB", "category": "Upregulated"}, {"x": 0.19663461239921762, "y": 2.580322255912792, "text": "Val", "category": "Upregulated"}, {"x": 0.19427484120757485, "y": 1.706230945881575, "text": "Ile", "category": "Upregulated"}, {"x": 1.1521160356711735, "y": 5.423658649794207, "text": "3-Methylhistidine", "category": "Upregulated"}, {"x": -0.19596430709526128, "y": 1.943150619992443, "text": "Pantothenate", "category": "Downregulated"}, {"x": -1.3232685158169575, "y": 3.9989199508439195, "text": "Trimethylamine N-oxide", "category": "Downregulated"}, {"x": -0.17486415078423867, "y": 2.395399340473675, "text": "Asn", "category": "Downregulated"}, {"x": -0.47695272674398603, "y": 4.178486471595227, "text": "Ornithine", "category": "Downregulated"}, {"x": -0.6471709416622896, "y": 1.91246812482554, "text": "Proline betaine", "category": "Downregulated"}, {"x": -1.0310244313741475, "y": 7.230622673923862, "text": "Met", "category": "Downregulated"}, {"x": -0.27009910361325257, "y": 1.777376509030908, "text": "Arg", "category": "Downregulated"}, {"x": -0.3232933245701986, "y": 3.4597806772589896, "text": "Citrulline", "category": "Downregulated"}, {"x": -0.6999292269723832, "y": 3.3561270509100303, "text": "Tyr", "category": "Downregulated"}, {"x": -0.17881663176114287, "y": 2.3360925276823563, "text": "Phosphorylcholine", "category": "Downregulated"}, {"x": -0.3261588170179935, "y": 3.5901564485802937, "text": "Cystathionine", "category": "Downregulated"}];
+        var plotDiv = document.getElementById('plotly-div');
+
+        // Populate gene selector dropdown
+        populateGeneSelector();
+
+        // Initial plot
+        var traces = createTraces(allData);
+        var layout = {
+            title: 'Differentially regulated metabolites',
+            xaxis: {
+                title: 'log<sub>2</sub> FC',
+                range: [-10, 10]
+            },
+            yaxis: {
+                title: '-log<sub>10</sub> P-value'
+            },
+            hovermode: 'closest',
+            template: 'plotly_white',
+
+            // Prevent auto-grouping in legend (fixes "Aa" issue)
+            uirevision: 'true',
+
+            legend: {
+                yanchor: "top",
+                y: 0.99,
+                xanchor: "left",
+                x: 0.01,
+                title: { text: '' },
+                font: { size: 12 },
+                tracegroupgap: 0  // Remove trace grouping
+            },
+
+            // Default to pan mode instead of zoom
+            dragmode: 'pan',
+
+            // Initialize empty annotations array
+            annotations: []
+        };
+
+        // Add horizontal line
+        layout.shapes = [{
+            type: 'line',
+            x0: 0,
+            x1: 30,
+            y0: 0,
+            y1: 0,
+            line: {
+                color: 'black',
+                width: 1,
+                dash: 'dash'
+            }
+        }];
+
+        // Configure
+        var config = {
+            responsive: true,
+            scrollZoom: true,  // Enable scroll to zoom
+            displayModeBar: true,
+            modeBarButtonsToAdd: [
+                'drawline',
+                'drawopenpath',
+                'drawclosedpath',
+                'drawcircle',
+                'drawrect',
+                'eraseshape'
+            ],
+            dragmode: 'pan'  // Enable panning by default
+        };
+
+        Plotly.newPlot(plotDiv, traces, layout, config);
+
+        // Add click event to show gene names on demand
+        plotDiv.on('plotly_click', function(data) {
+            if (data.points && data.points.length > 0) {
+                var point = data.points[0];
+                var geneName = point.text;
+                var x = point.x;
+                var y = point.y;
+
+                // Add annotation for the clicked point
+                var annotations = [{
+                    x: x,
+                    y: y,
+                    xref: 'x',
+                    yref: 'y',
+                    text: geneName,
+                    showarrow: true,
+                    arrowhead: 2,
+                    arrowsize: 1,
+                    arrowwidth: 2,
+                    arrowcolor: '#FF0000',
+                    ax: 0,
+                    ay: -40,
+                    bordercolor: '#FF0000',
+                    borderwidth: 2,
+                    borderpad: 4,
+                    bgcolor: '#FFFFFF',
+                    opacity: 1
+                }];
+
+                Plotly.relayout(plotDiv, { annotations: annotations });
+            }
+        });
+
+        // Add click event on the main plot to clear annotations
+        plotDiv.on('plotly_relayout', function(eventdata) {
+            // Only clear annotations if the user is panning or zooming
+            if (eventdata['dragmode'] ||
+                eventdata['xaxis.range[0]'] !== undefined ||
+                eventdata['yaxis.range[0]'] !== undefined) {
+                // Keep annotations during normal interactions
+                return;
+            }
+
+            // Clear annotations if clicking on empty areas
+            if (!eventdata.annotations) {
+                Plotly.relayout(plotDiv, { annotations: [] });
+            }
+        });
+
+        // Function to populate gene selector dropdown
+        function populateGeneSelector() {
+            var geneSelector = document.getElementById('gene-selector');
+            var uniqueGenes = new Set();
+
+            // Add upregulated and downregulated genes to the dropdown
+            allData.forEach(gene => {
+                if (gene.category === 'Upregulated' || gene.category === 'Downregulated') {
+                    if (!uniqueGenes.has(gene.text)) {
+                        uniqueGenes.add(gene.text);
+                        var option = document.createElement('option');
+                        option.value = gene.text;
+                        option.text = gene.text + (gene.category === 'Upregulated' ? ' (Up)' : ' (Down)');
+                        geneSelector.appendChild(option);
+                    }
+                }
+            });
+
+            // Sort dropdown options alphabetically
+            var options = Array.from(geneSelector.options).slice(1); // Skip the first "Select a gene" option
+            options.sort((a, b) => a.text.localeCompare(b.text));
+
+            // Clear and re-add the options
+            while (geneSelector.options.length > 1) {
+                geneSelector.remove(1);
+            }
+
+            options.forEach(option => geneSelector.add(option));
+        }
+
+        // Function to create traces
+        function createTraces(data) {
+            var traces = [];
+
+            // Filter by category
+            var showAll = document.getElementById('filter-all').checked;
+            var showUp = document.getElementById('filter-up').checked;
+            var showDown = document.getElementById('filter-down').checked;
+
+            // All genes (gray) - no text labels by default
+            if (showAll) {
+                var allGenes = data.filter(d => d.category === 'All');
+                traces.push({
+                    x: allGenes.map(d => d.x),
+                    y: allGenes.map(d => d.y),
+                    mode: 'markers',  // Only markers, no text
+                    marker: {
+                        color: 'gray',
+                        size: 3,
+                        opacity: 0.3
+                    },
+                    text: allGenes.map(d => d.text),
+                    name: 'All metabolites',
+                    hovertemplate: '<b>%{text}</b><br>log2FC: %{x:.2f}<br>-log10P: %{y:.2f}<extra></extra>',
+                    showlegend: true,
+                    legendgroup: null
+                });
+            }
+
+            // Upregulated metabolites (cyan) - no text labels by default
+            if (showUp) {
+                var upGenes = data.filter(d => d.category === 'Upregulated');
+                traces.push({
+                    x: upGenes.map(d => d.x),
+                    y: upGenes.map(d => d.y),
+                    mode: 'markers',  // Only markers, no text
+                    marker: {
+                        color: 'blue',
+                        size: 5,
+                        opacity: 1
+                    },
+                    text: upGenes.map(d => d.text),
+                    name: 'Upregulated metabolites',
+                    hovertemplate: '<b>%{text}</b><br>log2FC: %{x:.2f}<br>-log10P: %{y:.2f}<extra></extra>',
+                    showlegend: true,
+                    legendgroup: null
+                });
+            }
+
+            // Downregulated metabolites (green) - no text labels by default
+            if (showDown) {
+                var downGenes = data.filter(d => d.category === 'Downregulated');
+                traces.push({
+                    x: downGenes.map(d => d.x),
+                    y: downGenes.map(d => d.y),
+                    mode: 'markers',  // Only markers, no text
+                    marker: {
+                        color: 'red',
+                        size: 5,
+                        opacity: 1
+                    },
+                    text: downGenes.map(d => d.text),
+                    name: 'Downregulated metabolites',
+                    hovertemplate: '<b>%{text}</b><br>log2FC: %{x:.2f}<br>-log10P: %{y:.2f}<extra></extra>',
+                    showlegend: true,
+                    legendgroup: null
+                });
+            }
+
+            return traces;
+        }
+
+        // Function to update filters
+        function updateFilters() {
+            var traces = createTraces(allData);
+            Plotly.react(plotDiv, traces, layout, config);
+        }
+
+        // Function to select gene from dropdown
+        function selectGene(geneName) {
+            if (geneName) {
+                zoomToGene(geneName);
+            } else {
+                // Clear annotations if no gene is selected
+                Plotly.relayout(plotDiv, { annotations: [] });
+            }
+        }
+
+        // Function to search for genes
+        function searchGene() {
+            var searchTerm = document.getElementById('gene-search').value.trim().toLowerCase();
+            var resultsDiv = document.getElementById('search-results');
+
+            if (!searchTerm) {
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            // Find genes matching the search term
+            var matchingGenes = allData.filter(d =>
+                d.text.toLowerCase().includes(searchTerm)
+            );
+
+            // Remove duplicates
+            var uniqueGenes = [];
+            var uniqueTexts = new Set();
+
+            matchingGenes.forEach(gene => {
+                if (!uniqueTexts.has(gene.text)) {
+                    uniqueTexts.add(gene.text);
+                    uniqueGenes.push(gene);
+                }
+            });
+
+            // Display results
+            if (uniqueGenes.length > 0) {
+                resultsDiv.innerHTML = `<p>Found ${uniqueGenes.length} matching genes:</p>`;
+
+                // Limit display if too many matches
+                var displayLimit = 20;
+                var displayGenes = uniqueGenes.slice(0, displayLimit);
+
+                // Create annotations for all matching genes
+                var annotations = [];
+
+                // Debug log
+                console.log("Creating annotations for " + displayGenes.length + " genes");
+
+                // Calculate bounds for zoom
+                var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+                displayGenes.forEach(gene => {
+                    // Update bounds for zoom
+                    minX = Math.min(minX, gene.x);
+                    maxX = Math.max(maxX, gene.x);
+                    minY = Math.min(minY, gene.y);
+                    maxY = Math.max(maxY, gene.y);
+
+                    // Create annotation for each gene
+                    var annotation = {
+                        x: gene.x,
+                        y: gene.y,
+                        xref: 'x',
+                        yref: 'y',
+                        text: gene.text,
+                        showarrow: true,
+                        arrowhead: 2,
+                        arrowsize: 1,
+                        arrowwidth: 2,
+                        arrowcolor: '#FF0000',
+                        ax: 0,
+                        ay: -40,
+                        bordercolor: '#FF0000',
+                        borderwidth: 2,
+                        borderpad: 4,
+                        bgcolor: '#FFFFFF',
+                        opacity: 0.9
+                    };
+                    annotations.push(annotation);
+
+                    // Debug log
+                    console.log("Added annotation for " + gene.text + " at position " + gene.x + ", " + gene.y);
+                });
+
+                // Add padding to zoom area
+                const padding = 2;
+                minX = Math.max(0, minX - padding);
+                maxX = maxX + padding;
+                minY = minY - padding;
+                maxY = maxY + padding;
+
+                // Make sure we have the right annotations structure
+                if (!layout) {
+                    console.error("Layout is not defined!");
+                    layout = {};
+                }
+
+                // Prepare update with zoom and annotations
+                var update = {
+                    annotations: annotations,
+                    xaxis: {
+                        range: [minX, maxX]
+                    },
+                    yaxis: {
+                        range: [minY, maxY]
+                    }
+                };
+
+                // Apply annotations and zoom to show all matching genes
+                try {
+                    Plotly.relayout(plotDiv, update);
+                    console.log("Successfully added annotations and zoomed to view all matching genes");
+                } catch (error) {
+                    console.error("Error applying annotations and zoom:", error);
+
+                    // Fallback method
+                    try {
+                        // First update the layout object
+                        layout.annotations = annotations;
+                        layout.xaxis.range = [minX, maxX];
+                        layout.yaxis.range = [minY, maxY];
+
+                        // Then apply the full layout update
+                        Plotly.relayout(plotDiv, layout);
+                        console.log("Applied annotations and zoom using fallback method");
+                    } catch (fallbackError) {
+                        console.error("Fallback method also failed:", fallbackError);
+                    }
+                }
+
+                var geneList = displayGenes.map(gene =>
+                    `<a href="#" onclick="zoomToGene('${gene.text}'); return false;">${gene.text}</a>`
+                ).join(', ');
+
+                if (uniqueGenes.length > displayLimit) {
+                    resultsDiv.innerHTML += `<p>${geneList}, ... (and ${uniqueGenes.length - displayLimit} more)</p>`;
+                } else {
+                    resultsDiv.innerHTML += `<p>${geneList}</p>`;
+                }
+            } else {
+                resultsDiv.innerHTML = '<p>No matching genes found.</p>';
+            }
+        }
+
+        // Function to zoom to a specific gene
+        function zoomToGene(geneName) {
+            console.log("Zooming to gene: " + geneName);
+
+            // Reset selector if called from search
+            if (document.getElementById('gene-selector').value !== geneName) {
+                document.getElementById('gene-selector').value = geneName;
+            }
+
+            // Find the gene
+            var geneData = allData.find(d => d.text === geneName);
+
+            if (geneData) {
+                console.log("Found gene data:", geneData);
+
+                // Get coordinates
+                var x = geneData.x;
+                var y = geneData.y;
+
+                // Zoom to the point with some padding
+                var updateLayout = {
+                    xaxis: { range: [x - 2, x + 2] },
+                    yaxis: { range: [y - 2, y + 2] }
+                };
+
+                // Create red arrow annotation pointing clearly at the gene
+                var annotations = [{
+                    x: x,
+                    y: y,
+                    xref: 'x',
+                    yref: 'y',
+                    text: geneName,
+                    showarrow: true,
+                    arrowhead: 3,
+                    arrowsize: 1,
+                    arrowwidth: 3,
+                    arrowcolor: '#FF0000',
+                    ax: 0,
+                    ay: -60,
+                    bordercolor: '#FF0000',
+                    borderwidth: 2,
+                    borderpad: 4,
+                    bgcolor: '#FFFFFF',
+                    opacity: 0.9
+                }];
+
+                updateLayout.annotations = annotations;
+
+                // Apply annotations and zoom to plot
+                Plotly.relayout(plotDiv, updateLayout);
+
+                // Reset the selector dropdown if needed
+                if (document.getElementById('gene-selector').value !== geneName) {
+                    document.getElementById('gene-selector').value = geneName;
+                }
+            } else {
+                alert("Gene not found!");
+            }
+        }
+
+        // Function to reset view
+        function resetView() {
+            // Clear search box and selector
+            document.getElementById('gene-search').value = '';
+            document.getElementById('gene-selector').value = '';
+            document.getElementById('search-results').innerHTML = '';
+
+            // Reset zoom
+            var resetLayout = {
+                xaxis: {
+                    range: [-20, 20]
+                },
+                yaxis: {
+                    autorange: true
+                },
+                annotations: []
+            };
+
+            Plotly.relayout(plotDiv, resetLayout);
+        }
+    </script>
+</body>
+</html>
