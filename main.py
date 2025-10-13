@@ -49,7 +49,15 @@ with tabs[0]:
         """, unsafe_allow_html=True)
         image = Image.open('./paper_figs/Fig2.png')
         st.image(image, caption='',use_container_width=True)
-        
+    st.markdown("""
+            **License**  
+            This web application is licensed free of charge for academic use and we shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use of this web app. In addition, we are under no obligation to provide maintenance, support, updates, enhancements, or modifications.
+            """)  
+    st.markdown("""
+        **Citation & Code**  
+        https://github.com/HikaruSugimoto/torpor_app
+        """)        
+      
 
 with tabs[1]:
     st.markdown("""
