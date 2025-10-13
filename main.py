@@ -239,6 +239,43 @@ with tabs[4]:
     image = Image.open('./paper_figs/Fig9.png')
     st.image(image, caption='',use_container_width=True)
 
+    st.markdown("""
+**Trans-omics networks were infered using the following 10-step workflow:**
+The underlying data for each step of the trans-omics networks are available for download below.
+1. **Ligand–receptor interaction inference (transcriptome)**  
+   We inferred ligand–receptor interactions using transcriptomic data and the LIANA+ consensus resource (v1.5.1), which aggregates curated databases (e.g., CellPhoneDB, CellChat, ICELLNET, connectomeDB2020, CellTalkDB). Following the LIANA+ and decoupleR (v1.9.2) tutorial, we applied the ULM method and retained interactions with q-values < 0.05.
+
+2. **Metabolite–receptor interaction inference (transcriptome + metabolome)**  
+   We estimated metabolite–receptor interactions by combining transcriptomic and metabolomic data with MetalinksDB (via LIANA+), which integrates relationships from sources such as STITCH, HMDB, Recon3D, Human Metabolic Atlas, and Rhea, alongside curated metabolite–receptor resources. Pairs were connected when both metabolite levels and receptor gene expression changed significantly.
+
+3. **Transcription factor (TF) activity inference (transcriptome)**  
+   To estimate signaling downstream of receptors identified in Steps 1–2, we first identified TFs with altered activity under hypometabolic conditions. TF activity was inferred from transcriptomes using CollecTRI and VIPER.
+
+4. **Kinase activity inference (phosphoproteome)**  
+   Because signaling from receptors to TFs involves phosphorylation dynamics, we inferred upstream kinase activity changes explaining observed phosphosite alterations. We analyzed phosphoproteomes with the Serine/Threonine/Tyrosine Atlas using VIPER.
+
+5. **Molecular activity inference from phosphorylation (phosphoproteome)**  
+   Phosphorylation can regulate the activity/stability of TFs, kinases, phosphatases, enzymes, and other proteins. We assessed phosphorylation-driven activity changes using SignalingProfiler 2.0. Regulatory annotations for phosphosites (activating/inhibiting) were obtained from PhosphoSitePlus and SIGNOR; human-only site annotations were mapped to mouse using BLASTP.
+
+6. **Receptor–kinase–phosphatase–phosphosite–TF network assembly**  
+   We constructed a signaling network connecting receptors, kinases, phosphatases, phosphosites, and TFs with altered activity (Steps 1–5) using SignalingProfiler 2.0, which integrates prior knowledge with omics-derived protein activity scores.  
+   • *Naïve network:* Extracted candidate interactions from directed, signed activity-flow networks curated from SIGNOR, PhosphoSitePlus, and the Kinome Atlas, filtered to molecules detected in our datasets. We enumerated shortest paths (up to length 4 per layer) from receptors to TFs across two layers (receptors→intermediates; intermediates→TFs).  
+   • *Optimization:* We obtained a sign-coherent, context-specific model with CARNIVAL (ILP with IBM CPLEX) in two steps: receptors→intermediates, then intermediates→TFs.
+
+7. **TF–mRNA interaction inference (transcriptome)**  
+   We inferred TF–mRNA links using ChIP-Atlas. We downloaded the full list of ChIP-seq experiments and selected those for mouse (mm10) in “liver”, “hepatocytes”, or “muscle”. Target genes were defined by bait-protein peaks within 1 kb of TSS (MACS2 significance threshold 100). Experiments with <50 targets were excluded. Note that links are from individual ChIP-seq experiments to transcripts (not merged by TF at this stage).  
+   We then performed TF enrichment for genes up- or down-regulated in hypometabolism using one-tailed Fisher’s exact tests with Benjamini–Hochberg FDR correction (Q < 0.05), using all quantified transcripts as background. TFs significant in ≥1 experiment were retained; target transcripts were those with TSS bound in at least one significant experiment, stratified by TF up/down activity.
+
+8. **Enzyme–reaction–metabolite interaction inference (multi-omics)**  
+   Regulatory effects of substrate/product concentrations and enzyme mRNA/phosphorylation on metabolic reactions were inferred by integrating transcriptome, phosphoproteome, and metabolome data. Enzyme–reaction mappings and metabolite-reaction regulations were taken from KEGG, and enzymes annotated under KEGG “metabolism” were considered metabolic enzymes.
+
+9. **Transporter–metabolite interaction inference**  
+   We assumed transporter activity is influenced by metabolite levels and by transporter gene expression/phosphorylation. Transporter–substrate pairs were obtained from TCDB. We considered metabolites with fewer than 50 connections by ChEBI ID, and only transporters localized to the plasma membrane per UniProt annotations.
+
+10. **Allosteric regulation inference**  
+    We identified allosteric regulation of metabolic reactions by metabolites using the BRENDA database (mammalian activators/inhibitors). Taxonomic information was obtained from NCBI. BRENDA compound names were mapped to KEGG compound IDs using InChI keys or KEGG/HMDB names. 
+""")
+
     with open("network.xlsx", "rb") as f:
         st.download_button(
             label="Download the underlying data for the trans-omics networks",
