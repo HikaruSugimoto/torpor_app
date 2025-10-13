@@ -240,8 +240,8 @@ with tabs[4]:
     st.image(image, caption='',use_container_width=True)
 
     st.markdown("""
-**Trans-omics networks were infered using the following 10-step workflow:**
-The underlying data for each step of the trans-omics networks are available for download below.
+**Trans-omics networks were infered using the following 10-step workflow**
+   The underlying data for each step of the trans-omics networks are available for download below.
 1. **Ligand–receptor interaction inference (transcriptome)**  
    We inferred ligand–receptor interactions using transcriptomic data and the LIANA+ consensus resource (v1.5.1), which aggregates curated databases (e.g., CellPhoneDB, CellChat, ICELLNET, connectomeDB2020, CellTalkDB). Following the LIANA+ and decoupleR (v1.9.2) tutorial, we applied the ULM method and retained interactions with q-values < 0.05.
 
