@@ -13,7 +13,7 @@ def render_html(html_text: str):
 st.set_page_config(page_title="A multi-tissue, multi-omics atlas of hypometabolism", page_icon="🧬", layout="wide")
 st.markdown("""<style>.big-title{font-size:2.1rem;font-weight:800;margin:0 0 .5rem 0}.subtle{opacity:.75}.pill{display:inline-block;padding:.15rem .6rem;border-radius:999px;border:1px solid #e6ebf2;background:#fff;margin-right:.25rem}.callout{padding:.9rem 1rem;border-radius:12px;background:#f6f8fb;border:1px solid #e6ebf2}.caption{font-size:.9rem;opacity:.8}</style>""", unsafe_allow_html=True)
 st.markdown('<div class="big-title">A multi-tissue, multi-omics atlas of hypometabolism</div>', unsafe_allow_html=True)
-tabs = st.tabs(["Overview","Metabolome","Transcriptome","Phosphoproteome","Trans-omics network"])
+tabs = st.tabs(["Overview","Metabolome","Transcriptome","Proteome","Phosphoproteome","Trans-omics network"])
 
     
 with tabs[0]:
@@ -32,7 +32,7 @@ with tabs[0]:
         **Study design**  
         • Mice were assigned to one of four experimental conditions: QIH, CNO (control for QIH, injected with clozapine-N-oxide), FIT, and Ad lib (freely fed control).  
         • Multi‑organ sampling: brain, heart, liver, kidney, skeletal muscle, brown adipose tissue (BAT), and plasma.  
-        • Assays: capillary electrophoresis–mass spectrometry (metabolome), RNA‑seq (transcriptome), and liquid chromatography–mass spectrometry (phosphoproteome).  
+        • Assays: capillary electrophoresis–mass spectrometry (metabolome), RNA‑seq (transcriptome), and liquid chromatography–mass spectrometry (proteome, phosphoproteome).  
         """)
         image = Image.open('./paper_figs/Fig1.png')
         st.image(image, caption='',use_container_width=True)
@@ -170,24 +170,24 @@ with tabs[3]:
         **Study design**  
         Mice were assigned to one of four experimental conditions: QIH (Q neuron–induced hypometabolism), 
         CNO (control for QIH, injected with clozapine-N-oxide), FIT (fasting-induced torpor), and Ad lib (freely fed control). 
-        Liver and skeletal muscle samples were collected after 10 hours of intervention (n = 10 per group) 
-        and subjected to phosphoproteomic analysis using liquid chromatography–mass spectrometry (LC-MS).   
+        Liver and skeletal muscle were collected after 10 hours of intervention (n = 10 per group) 
+        for proteomic analysis using liquid chromatography–mass spectrometry (LC-MS).   
         """)
-    image = Image.open('./paper_figs/Fig6.png')
+    image = Image.open('./paper_figs/Fig10.png')
     st.image(image, caption='',use_container_width=True)
     
-    options4 = ["Liver",'Muscle']
-    Organ= st.selectbox('Organ for visualization:',options4, key='vis5')
-    image = Image.open('./paper_figs/'+Organ+'_pho.png')
+    options3 = ["Liver",'Muscle']
+    Organ= st.selectbox('Organ for visualization:',options3, key='vis5')
+    image = Image.open('./paper_figs/'+Organ+'_pro.png')
     st.image(image, caption='',use_container_width=True)
     st.markdown("""
         Left panel shows the principal component analysis (PCA) plot with 95% 
-        confidence ellipses of phosphoproteome profiles. 
-        Middle panels present volcano plots highlighting significantly altered phosphorylation sites (Q < 0.05) for three pairwise comparisons: 
+        confidence ellipses of proteomic profiles. 
+        Middle panels present volcano plots highlighting significantly altered proteins (Q < 0.05) for three pairwise comparisons: 
         QIH vs CNO, FIT vs Ad lib, and QIH vs FIT. 
-        Right panels display UpSet plots that summarize the overlap of significantly increased (right) and decreased (left) phosphorylation sites 
-        among the comparisons. Black boxes denote phosphosites shared across comparisons, and 
-        gray bars represent the total number of altered phosphosites per condition.
+        Right panels display UpSet plots that summarize the overlap of significantly increased (right) and decreased (left) proteins 
+        among the comparisons. Black boxes denote proteins shared across comparisons, and 
+        gray bars represent the total number of altered proteins per condition.
         """)
     
     with open("list.xlsx", "rb") as f:
@@ -208,11 +208,58 @@ with tabs[3]:
                 
     options2 = ['QIH vs CNO',"FIT vs Ad lib" ,"QIH vs FIT"]
     Comp= st.selectbox('Comparison for visualization:',options2, key='vis6')
+    DEFAULT_HTML_PATH = Path("./omics_html/proteo_html/"+Organ+" ("+Comp+").html")
+    html_text = DEFAULT_HTML_PATH.read_text(encoding="utf-8", errors="ignore")
+    render_html(html_text)
+
+with tabs[4]:
+    st.markdown("""
+        **Study design**  
+        Mice were assigned to one of four experimental conditions: QIH (Q neuron–induced hypometabolism), 
+        CNO (control for QIH, injected with clozapine-N-oxide), FIT (fasting-induced torpor), and Ad lib (freely fed control). 
+        Liver and skeletal muscle samples were collected after 10 hours of intervention (n = 10 per group) 
+        and subjected to phosphoproteomic analysis using liquid chromatography–mass spectrometry (LC-MS).   
+        """)
+    image = Image.open('./paper_figs/Fig6.png')
+    st.image(image, caption='',use_container_width=True)
+    
+    options4 = ["Liver",'Muscle']
+    Organ= st.selectbox('Organ for visualization:',options4, key='vis7')
+    image = Image.open('./paper_figs/'+Organ+'_pho.png')
+    st.image(image, caption='',use_container_width=True)
+    st.markdown("""
+        Left panel shows the principal component analysis (PCA) plot with 95% 
+        confidence ellipses of phosphoproteome profiles. 
+        Middle panels present volcano plots highlighting significantly altered phosphorylation sites (Q < 0.05) for three pairwise comparisons: 
+        QIH vs CNO, FIT vs Ad lib, and QIH vs FIT. 
+        Right panels display UpSet plots that summarize the overlap of significantly increased (right) and decreased (left) phosphorylation sites 
+        among the comparisons. Black boxes denote phosphosites shared across comparisons, and 
+        gray bars represent the total number of altered phosphosites per condition.
+        """)
+    
+    with open("list.xlsx", "rb") as f:
+        st.download_button(
+            label="Download the underlying data for the volcano plots",
+            data=f,
+            file_name="list.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",key="download-results-main7"
+        )
+
+    with open("upset_plot.xlsx", "rb") as f:
+        st.download_button(
+            label="Download the underlying data for the UpSet plots",
+            data=f,
+            file_name="upset_plot.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",key="download-results-main8"
+        )
+                
+    options2 = ['QIH vs CNO',"FIT vs Ad lib" ,"QIH vs FIT"]
+    Comp= st.selectbox('Comparison for visualization:',options2, key='vis8')
     DEFAULT_HTML_PATH = Path("./omics_html/phospho_html/"+Organ+" ("+Comp+").html")
     html_text = DEFAULT_HTML_PATH.read_text(encoding="utf-8", errors="ignore")
     render_html(html_text)
     
-with tabs[4]:
+with tabs[5]:
     st.markdown("""
         **Study design**  
         Extracellular ligands and metabolites regulate intracellular signaling pathways through receptors and transporters. 
@@ -220,7 +267,7 @@ with tabs[4]:
         that control metabolism. Metabolic reactions are also shaped by substrate/product concentrations and allosteric regulation by metabolites.
         Additionally, metabolites can be transported across organs through inter-organ exchange.
         To uncover such molecular networks underlying hypometabolic states, we constructed trans-omics networks by integrating 
-        metabolomic, transcriptomic, and phosphoproteomic datasets. 
+        metabolomic, transcriptomic, proteomic, and phosphoproteomic datasets. 
         We then analyzed the network architecture based on topological features, such as degree distribution and motif structures.  
         """)
     image = Image.open('./paper_figs/Fig7.png')
@@ -250,13 +297,13 @@ with tabs[4]:
     st.markdown("""
 **Trans-omics networks were infered using the following 10-step workflow**  
    The underlying data for each step of the trans-omics networks are available for download below.
-1. **Ligand–receptor interaction inference (transcriptome)**  
-   We inferred ligand–receptor interactions using transcriptomic data and the LIANA+ consensus resource (v1.5.1), which aggregates curated databases (e.g., CellPhoneDB, CellChat, ICELLNET, connectomeDB2020, CellTalkDB). Following the LIANA+ and decoupleR (v1.9.2) tutorial, we applied the ULM method and retained interactions with q-values < 0.05.
+1. **Ligand–receptor interaction inference (transcriptome, proteome)**  
+   We inferred ligand–receptor interactions using transcriptomic and proteomic data and the LIANA+ consensus resource (v1.5.1), which aggregates curated databases (e.g., CellPhoneDB, CellChat, ICELLNET, connectomeDB2020, CellTalkDB). Following the LIANA+ and decoupleR (v1.9.2) tutorial, we applied the ULM method and retained interactions with q-values < 0.05.
 
-2. **Metabolite–receptor interaction inference (transcriptome + metabolome)**  
-   We estimated metabolite–receptor interactions by combining transcriptomic and metabolomic data with MetalinksDB (via LIANA+), which integrates relationships from sources such as STITCH, HMDB, Recon3D, Human Metabolic Atlas, and Rhea, alongside curated metabolite–receptor resources. Pairs were connected when both metabolite levels and receptor gene expression changed significantly.
+2. **Metabolite–receptor interaction inference (transcriptome, proteome, metabolome)**  
+   We estimated metabolite–receptor interactions by combining transcriptomic, proteomic, and metabolomic data with MetalinksDB (via LIANA+), which integrates relationships from sources such as STITCH, HMDB, Recon3D, Human Metabolic Atlas, and Rhea, alongside curated metabolite–receptor resources. Pairs were connected when both metabolite levels and receptor expression changed significantly.
 
-3. **Transcription factor (TF) activity inference (transcriptome)**  
+3. **Transcription factor (TF) activity inference (transcriptome, proteome)**  
    To estimate signaling downstream of receptors identified in Steps 1–2, we first identified TFs with altered activity under hypometabolic conditions. TF activity was inferred from transcriptomes using CollecTRI and VIPER.
 
 4. **Kinase activity inference (phosphoproteome)**  
@@ -275,10 +322,10 @@ with tabs[4]:
    We then performed TF enrichment for genes up- or down-regulated in hypometabolism using one-tailed Fisher’s exact tests with Benjamini–Hochberg FDR correction (Q < 0.05), using all quantified transcripts as background. TFs significant in ≥1 experiment were retained; target transcripts were those with TSS bound in at least one significant experiment, stratified by TF up/down activity.
 
 8. **Enzyme–reaction–metabolite interaction inference (multi-omics)**  
-   Regulatory effects of substrate/product concentrations and enzyme mRNA/phosphorylation on metabolic reactions were inferred by integrating transcriptome, phosphoproteome, and metabolome data. Enzyme–reaction mappings and metabolite-reaction regulations were taken from KEGG, and enzymes annotated under KEGG “metabolism” were considered metabolic enzymes.
+   Regulatory effects of substrate/product concentrations and enzyme mRN/protein/phosphorylation on metabolic reactions were inferred by integrating transcriptome, proteome, phosphoproteome, and metabolome data. Enzyme–reaction mappings and metabolite-reaction regulations were taken from KEGG, and enzymes annotated under KEGG “metabolism” were considered metabolic enzymes.
 
 9. **Transporter–metabolite interaction inference**  
-   We assumed transporter activity is influenced by metabolite levels and by transporter gene expression/phosphorylation. Transporter–substrate pairs were obtained from TCDB. We considered metabolites with fewer than 50 connections by ChEBI ID, and only transporters localized to the plasma membrane per UniProt annotations.
+   We assumed transporter activity is influenced by metabolite levels and by transporter expression/phosphorylation. Transporter–substrate pairs were obtained from TCDB. We considered metabolites with fewer than 50 connections by ChEBI ID, and only transporters localized to the plasma membrane per UniProt annotations.
 
 10. **Allosteric regulation inference**  
     We identified allosteric regulation of metabolic reactions by metabolites using the BRENDA database (mammalian activators/inhibitors). Taxonomic information was obtained from NCBI. BRENDA compound names were mapped to KEGG compound IDs using InChI keys or KEGG/HMDB names. 
@@ -289,5 +336,5 @@ with tabs[4]:
             label="Download the underlying data for the trans-omics networks",
             data=f,
             file_name="network.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",key="download-results-main8"
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",key="download-results-main9"
         )
