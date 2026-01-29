@@ -207,7 +207,7 @@ with tabs[3]:
         )
                 
     options2 = ['QIH vs CNO',"FIT vs Ad lib" ,"QIH vs FIT"]
-    #Comp= st.selectbox('Comparison for visualization:',options2, key='vis6')
+    Comp= st.selectbox('Comparison for visualization:',options2, key='vis6')
     DEFAULT_HTML_PATH = Path("./omics_html/proteo_html/"+Organ+" ("+Comp+").html")
     html_text = DEFAULT_HTML_PATH.read_text(encoding="utf-8", errors="ignore")
     render_html(html_text)
